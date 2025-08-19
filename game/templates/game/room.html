@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Futuristic Tic-Tac-Toe</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root{
+      --bg1:#0a0c1b;
+      --bg2:#0f132b;
+      --panel:rgba(255,255,255,.06);
+      --glass:rgba(255,255,255,.08);
+      --border:rgba(255,255,255,.12);
+      --accent:#00e7ff;
+      --accent2:#8b5cf6;
+      --win:#22c55e;
+      --x:#60a5fa;
+      --o:#f472b6;
+      --text:#e5e7eb;
+      --muted:#9aa3b2;
+    }
+
+    /* Background */
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Poppins, Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 600px at 10% -10%, rgba(0,231,255,.30), transparent 60%),
+        radial-gradient(900px 600px at 110% 20%, rgba(139,92,246,.25), transparent 60%),
+        linear-gradient(180deg, var(--bg1), var(--bg2));
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:24px;
+    }
+
+    /* Layout */
+    .app{
+      width:min(1100px, 96vw);
+      display:grid;
+      grid-template-columns: 320px 1fr;
+      gap:22px;
+    }
+    @media (max-width:900px){
+      .app{grid-template-columns:1fr; gap:16px;}
+    }
+
+    .panel, .game{
+      background:var(--panel);
+      backdrop-filter: blur(14px);
+      border:1px solid var(--border);
+      border-radius:22px;
+      box-shadow:
+        0 10px 30px rgba(0,0,0,.45),
+        inset 0 1px 0 rgba(255,255,255,.04);
+    }
+
+    /* Side panel */
+    .panel{
+      padding:20px 18px;
+      display:flex; flex-direction:column; gap:16px;
+    }
+    .brand{
+      display:flex; align-items:center; gap:10px;
+      font-weight:700; font-size:20px; letter-spacing:.4px;
+    }
+    .badge{
+      padding:6px 10px; border-radius:999px; font-size:12px;
+      background:linear-gradient(90deg, rgba(0,231,255,.18), rgba(139,92,246,.18));
+      border:1px solid var(--border); color:var(--muted);
+    }
+
+    .cards{display:grid; grid-template-columns:1fr; gap:12px;}
+    .card{
+      background:var(--glass);
+      border:1px solid var(--border);
+      border-radius:16px;
+      padding:14px;
+      display:flex; align-items:center; justify-content:space-between;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,.02);
+    }
+    .label{color:var(--muted); font-size:13px;}
+    .value{font-weight:800; font-size:22px;}
+
+    .controls{display:flex; gap:10px; margin-top:6px; flex-wrap:wrap;}
+    .btn{
+      border:1px solid var(--border);
+      background: linear-gradient(90deg, rgba(0,231,255,.16), rgba(139,92,246,.16));
+      color:var(--text);
+      padding:10px 14px; border-radius:12px; cursor:pointer;
+      font-weight:600; transition:.2s transform, .25s box-shadow, .25s filter;
+    }
+    .btn:hover{transform:translateY(-1px); box-shadow:0 6px 20px rgba(0,231,255,.15);}
+    .btn:active{transform:translateY(0);}
+    .btn-ghost{background:transparent;}
+
+    /* Game area */
+    .game{
+      padding:22px;
+      display:flex; flex-direction:column; align-items:center;
+    }
+    .statusbar{
+      width:100%;
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:14px;
+    }
+    .turn{
+      display:flex; align-items:center; gap:8px;
+      font-weight:700;
+    }
+    .pulse{
+      width:10px; height:10px; border-radius:50%;
+      background:var(--accent); box-shadow:0 0 12px var(--accent);
+      animation:pulse 1.2s ease-in-out infinite;
+    }
+    @keyframes pulse{
+      0%{transform:scale(1); box-shadow:0 0 12px var(--accent);}
+      50%{transform:scale(1.25); box-shadow:0 0 24px var(--accent);}
+      100%{transform:scale(1); box-shadow:0 0 12px var(--accent);}
+    }
+
+    .board{
+      margin-top:6px;
+      display:grid;
+      grid-template-columns: repeat(3, min(22vw, 140px));
+      grid-template-rows: repeat(3, min(22vw, 140px));
+      gap:14px;
+      justify-content:center;
+    }
+    @media (max-width:520px){
+      .board{
+        grid-template-columns: repeat(3, 28vw);
+        grid-template-rows: repeat(3, 28vw);
+        gap:10px;
+      }
+    }
+
+    .cell{
+      background:
+        linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,.04));
+      border:1px solid var(--border);
+      border-radius:18px;
+      display:flex; align-items:center; justify-content:center;
+      font-weight:900; font-size: clamp(38px, 7vw, 60px);
+      letter-spacing:1px;
+      color:#cbd5e1;
+      cursor:pointer;
+      position:relative;
+      overflow:hidden;
+      transition: transform .12s ease, box-shadow .25s ease, background .25s ease;
+      box-shadow: inset 0 10px 30px rgba(0,0,0,.25);
+      user-select:none;
+    }
+    .cell:hover{ transform:translateY(-2px); box-shadow:0 10px 24px rgba(0,231,255,.12); }
+    .cell.disabled{ cursor:default; opacity:.75; }
+
+    /* Placement pop */
+    .cell.placed{
+      animation:pop .16s ease-out;
+    }
+    @keyframes pop{ from{transform:scale(.92);} to{transform:scale(1);} }
+
+    /* X / O theme colors */
+    .cell.x{ color:var(--x); text-shadow: 0 0 22px rgba(96,165,250,.55); }
+    .cell.o{ color:var(--o); text-shadow: 0 0 22px rgba(244,114,182,.55); }
+
+    /* Win glow */
+    .cell.win{
+      box-shadow:0 0 22px rgba(34,197,94,.45), inset 0 0 20px rgba(34,197,94,.25);
+      background: linear-gradient(180deg, rgba(34,197,94,.22), rgba(34,197,94,.08));
+      border-color: rgba(34,197,94,.55);
+      animation:winglow .9s ease-in-out infinite alternate;
+    }
+    @keyframes winglow{
+      from{ filter: drop-shadow(0 0 0 var(--win)); }
+      to{ filter: drop-shadow(0 0 10px var(--win)); }
+    }
+
+    .helper{
+      margin-top:14px;
+      color:var(--muted);
+      font-size:14px; min-height:22px;
+      text-align:center;
+    }
+
+    /* Modal result */
+    .modal{
+      position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+      background:rgba(10,12,27,.55); backdrop-filter: blur(6px);
+      opacity:0; pointer-events:none; transition:.25s;
+    }
+    .modal.show{ opacity:1; pointer-events:auto; }
+    .modal-card{
+      width:min(520px, 92vw);
+      background:var(--panel);
+      border:1px solid var(--border);
+      border-radius:18px; padding:22px;
+      text-align:center; box-shadow:0 20px 60px rgba(0,0,0,.55);
+    }
+    .modal h2{margin:0 0 8px; font-size:26px;}
+    .modal p{margin:0 0 18px; color:var(--muted);}
+  </style>
+</head>
+<body>
+  <div class="app">
+
+    <!-- Sidebar / standard elements -->
+    <aside class="panel">
+      <div class="brand">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+          <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4Z" stroke="url(#g1)" stroke-width="1.6"/>
+          <defs><linearGradient id="g1" x1="0" y1="0" x2="24" y2="24"><stop stop-color="#00e7ff"/><stop offset="1" stop-color="#8b5cf6"/></linearGradient></defs>
+        </svg>
+        <span>Tic-Tac-Toe</span>
+        <span class="badge">Neon • Glass</span>
+      </div>
+
+      <div class="cards">
+        <div class="card">
+          <div>
+            <div class="label">Player X</div>
+            <div class="value" id="scoreX">0</div>
+          </div>
+          <span style="color:var(--x); font-weight:800;">X</span>
+        </div>
+        <div class="card">
+          <div>
+            <div class="label">Player O</div>
+            <div class="value" id="scoreO">0</div>
+          </div>
+          <span style="color:var(--o); font-weight:800;">O</span>
+        </div>
+        <div class="card">
+          <div>
+            <div class="label">Round</div>
+            <div class="value"><span id="roundNow">1</span>/<span id="roundMax">3</span></div>
+          </div>
+          <span class="label" id="lastWinner">Last: —</span>
+        </div>
+      </div>
+
+      <div class="controls">
+        <button class="btn" id="restartMatchBtn">Restart Match</button>
+        <button class="btn btn-ghost" id="newRoundBtn">Next Round</button>
+      </div>
+
+      <div class="tip-card">
+  <h3 class="tip-title">💡 Game Tip</h3>
+  <p class="tip-text">Best of 3 rounds decides the match. Winning tiles will glow in neon ✨</p>
+</div>
+
+    </aside>
+
+    <!-- Game area -->
+    <section class="game">
+      <div class="statusbar">
+        <div class="turn">
+          <span class="pulse" id="pulse"></span>
+          <span id="turnText">Turn: X</span>
+        </div>
+        <div class="badge" id="statusBadge">Ready</div>
+      </div>
+
+      <div class="board" id="board">
+        <!-- 9 cells (no Django loops; works anywhere) -->
+        <div class="cell" data-index="0"></div>
+        <div class="cell" data-index="1"></div>
+        <div class="cell" data-index="2"></div>
+        <div class="cell" data-index="3"></div>
+        <div class="cell" data-index="4"></div>
+        <div class="cell" data-index="5"></div>
+        <div class="cell" data-index="6"></div>
+        <div class="cell" data-index="7"></div>
+        <div class="cell" data-index="8"></div>
+      </div>
+
+      <div class="helper" id="helper">Tap a tile to play.</div>
+    </section>
+  </div>
+
+  <!-- Result modal -->
+  <div class="modal" id="resultModal">
+    <div class="modal-card">
+      <h2 id="finalTitle">Match Result</h2>
+      <p id="finalDetail"></p>
+      <div style="display:flex; gap:10px; justify-content:center;">
+        <button class="btn" id="playAgainBtn">Play Again</button>
+        <button class="btn btn-ghost" id="closeModalBtn">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // --- State ---
+    const cells   = Array.from(document.querySelectorAll(".cell"));
+    const boardEl = document.getElementById("board");
+    const helper  = document.getElementById("helper");
+    const statusBadge = document.getElementById("statusBadge");
+    const turnText = document.getElementById("turnText");
+    const scoreXEl = document.getElementById("scoreX");
+    const scoreOEl = document.getElementById("scoreO");
+    const roundNowEl = document.getElementById("roundNow");
+    const roundMaxEl = document.getElementById("roundMax");
+    const lastWinnerEl = document.getElementById("lastWinner");
+    const resultModal = document.getElementById("resultModal");
+    const finalTitle  = document.getElementById("finalTitle");
+    const finalDetail = document.getElementById("finalDetail");
+
+    const maxRounds = 3;
+    roundMaxEl.textContent = String(maxRounds);
+
+    let board = Array(9).fill("");
+    let current = "X";
+    let scores = { X: 0, O: 0 };
+    let round  = 1;
+    let locked = false;
+
+    // --- Helpers ---
+    function setTurnText(){
+      turnText.textContent = "Turn: " + current;
+      statusBadge.textContent = "Playing";
+    }
+    function updateScores(){
+      scoreXEl.textContent = String(scores.X);
+      scoreOEl.textContent = String(scores.O);
+    }
+    function allFilled(arr){ return arr.every(v => v !== ""); }
+
+    function winLine(state){
+      const lines = [
+        [0,1,2],[3,4,5],[6,7,8],
+        [0,3,6],[1,4,7],[2,5,8],
+        [0,4,8],[2,4,6]
+      ];
+      for(const line of lines){
+        const [a,b,c] = line;
+        if(state[a] && state[a] === state[b] && state[a] === state[c]) return line;
+      }
+      return null;
+    }
+
+    function place(cell){
+      if(locked) return;
+      const idx = Number(cell.dataset.index);
+      if(board[idx] !== "") return;
+
+      board[idx] = current;
+      cell.textContent = current;
+      cell.classList.add("placed", current === "X" ? "x" : "o");
+
+      const win = winLine(board);
+      if(win){
+        locked = true;
+        win.forEach(i => cells[i].classList.add("win"));
+        scores[current] += 1;
+        updateScores();
+        helper.textContent = `Round ${round}: ${current} wins ✨`;
+        statusBadge.textContent = "Round over";
+
+        setTimeout(() => nextRound(current), 1100);
+        return;
+      }
+
+      if(allFilled(board)){
+        locked = true;
+        helper.textContent = `Round ${round}: Draw`;
+        statusBadge.textContent = "Round over";
+        setTimeout(() => nextRound(null), 900);
+        return;
+      }
+
+      current = current === "X" ? "O" : "X";
+      setTurnText();
+    }
+
+    function nextRound(winner){
+      if(winner){ lastWinnerEl.textContent = "Last: " + winner; }
+      else { lastWinnerEl.textContent = "Last: Draw"; }
+
+      if(round < maxRounds){
+        round += 1;
+        roundNowEl.textContent = String(round);
+        resetBoard();
+      } else {
+        // match finished
+        locked = true;
+        const title = scores.X === scores.O ? "Match Draw" :
+                      (scores.X > scores.O ? "X Wins the Match" : "O Wins the Match");
+        finalTitle.textContent = "🏁 " + title;
+        finalDetail.textContent = `Final Score — X: ${scores.X} • O: ${scores.O}`;
+        resultModal.classList.add("show");
+      }
+    }
+
+    function resetBoard(){
+      board = Array(9).fill("");
+      cells.forEach(c => { c.textContent=""; c.className="cell"; });
+      current = "X";
+      locked = false;
+      helper.textContent = "Next round started. X goes first.";
+      setTurnText();
+    }
+
+    function restartMatch(){
+      scores = {X:0, O:0};
+      updateScores();
+      round = 1;
+      roundNowEl.textContent = "1";
+      lastWinnerEl.textContent = "Last: —";
+      resultModal.classList.remove("show");
+      resetBoard();
+    }
+
+    // --- Wire up UI ---
+    cells.forEach(c => c.addEventListener("click", () => place(c)));
+    document.getElementById("restartMatchBtn").addEventListener("click", restartMatch);
+    document.getElementById("newRoundBtn").addEventListener("click", () => { if(!locked) { helper.textContent="Round skipped."; locked=true; } nextRound(null); });
+    document.getElementById("playAgainBtn").addEventListener("click", restartMatch);
+    document.getElementById("closeModalBtn").addEventListener("click", () => resultModal.classList.remove("show"));
+
+    // Init
+    setTurnText();
+    updateScores();
+  </script>
+</body>
+</html>
