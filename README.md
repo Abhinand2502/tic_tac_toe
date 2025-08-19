@@ -30,7 +30,7 @@ Play against another player in real-time or enjoy the futuristic UI with glowing
 ### 1. Clone the repo
 ```bash
 git clone https://github.com/Abhinand2502/tic_tac_toe.git
-cd tic_tac_toe
+cd tictactoe_project
 
 python -m venv venv
 source venv/bin/activate   # (Linux/Mac)
